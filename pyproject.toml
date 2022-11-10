@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ssfm_gpu"
+version = "0.0.2"
+authors = [
+  { name="Egor Sedov", email="e.sedov@g.nsu.ru" },
+]
+description = "Tensorflow GPU version of split-step Fourier method for Nonlinear Schrodinger and Manakov equations"
+readme = "README.md"
+license = { file="LICENSE" }
+requires-python = ">=3.7"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/esf0/ssfm-gpu"
+"Bug Tracker" = "https://github.com/esf0/ssfm-gpu/issues"

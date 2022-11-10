@@ -4,6 +4,8 @@ import numpy as np
 from tensorflow._api.v2.signal import fft, fftshift, ifft, ifftshift
 from tensorflow import cast
 
+# methods for Schrödinger equation (two polarisations)
+
 
 def tf_ssfm_dispersive_step(signal, dispersion):
 
@@ -43,6 +45,73 @@ def tf_fiber_propogate(initial_signal, t_span, fiber_length, n_span, gamma, beta
     signal = tf_ssfm_dispersive_step(signal, dispersion_mhalf)
 
     return signal
+
+
+def propagate_schrodinger(channel, signal, sample_freq):
+    # schrodinger
+    dt = 1 / sample_freq
+    nt = len(signal)
+    # print(nt)
+    t_span = dt * nt
+    # start_time = datetime.now()
+
+    sq_gain = tf.cast(tf.math.sqrt(channel['gain']), tf.complex128)
+    std = tf.cast(tf.math.sqrt(channel['noise_density'] * sample_freq), tf.complex128)
+    # one_over_sq_2 = tf.cast(1. / tf.math.sqrt(2.), tf.complex128)
+
+    for span_ind in range(channel['n_spans']):
+
+        signal = tf_fiber_propogate(signal, t_span,
+                                    channel['z_span'],
+                                    channel['nz'],
+                                    channel['gamma'],
+                                    channel['beta2'],
+                                    alpha=channel['alpha'],
+                                    beta3=channel['beta3'])
+
+        noise = tf.complex(tf.random.normal([nt], 0, 1, dtype=tf.float64),
+                           tf.random.normal([nt], 0, 1, dtype=tf.float64))
+
+        signal = sq_gain * signal + noise * std
+
+    # end_time = datetime.now()
+    # time_diff = (end_time - start_time)
+    # execution_time = time_diff.total_seconds() * 1000
+    # print("Signal propagation took", execution_time, "ms")
+
+    return signal
+
+
+def dispersion_compensation(channel, signal, dt):
+    """
+    Compensate dispersion.
+
+    Args:
+        channel: dictionary with channel specification
+        signal: signal
+        dt: time step for signal (1 / sample_frequency)
+
+    Returns:
+        (tuple): tuple containing:
+
+            signal_cdc (tf_tensor): signal with compensated dispersion
+
+    """
+
+    #  Dispersion compensation #
+    nt_cdc = len(signal)
+    t_span = nt_cdc * dt
+    w = fftshift(np.array([(i - nt_cdc / 2) * (2. * np.pi / t_span) for i in range(nt_cdc)], dtype=np.complex))
+    w2 = tf.math.pow(w, 2)
+    w3 = tf.math.pow(w, 3)
+    dispersion = tf.math.exp((0.5j * channel['beta2'] * w2 + 1. / 6. * channel['beta3'] * w3) *
+                             (-channel['z_span'] * channel['n_spans']))
+    signal_cdc = tf_ssfm_dispersive_step(tf.cast(signal, tf.complex128), dispersion)
+
+    return signal_cdc
+
+
+# methods for Manakov equation (two polarisations)
 
 
 def tf_ssfm_manakov_dispersive_step(first, second, dispersion):
@@ -94,41 +163,6 @@ def tf_manakov_fiber_propogate(initial_first, initial_second, t_span, fiber_leng
     return first, second
 
 
-def propagate_schrodinger(channel, signal, sample_freq):
-    # schrodinger
-    dt = 1 / sample_freq
-    nt = len(signal)
-    # print(nt)
-    t_span = dt * nt
-    start_time = datetime.now()
-
-    sq_gain = tf.cast(tf.math.sqrt(channel['gain']), tf.complex128)
-    std = tf.cast(tf.math.sqrt(channel['noise_density'] * sample_freq), tf.complex128)
-    # one_over_sq_2 = tf.cast(1. / tf.math.sqrt(2.), tf.complex128)
-
-    for span_ind in range(channel['n_spans']):
-
-        signal = tf_fiber_propogate(signal, t_span,
-                                    channel['z_span'],
-                                    channel['nz'],
-                                    channel['gamma'],
-                                    channel['beta2'],
-                                    alpha=channel['alpha'],
-                                    beta3=channel['beta3'])
-
-        noise = tf.complex(tf.random.normal([nt], 0, 1, dtype=tf.float64),
-                           tf.random.normal([nt], 0, 1, dtype=tf.float64))
-
-        signal = sq_gain * signal + noise * std
-
-    end_time = datetime.now()
-    time_diff = (end_time - start_time)
-    execution_time = time_diff.total_seconds() * 1000
-    print("Signal propagation took", execution_time, "ms")
-
-    return signal
-
-
 def propagate_manakov(channel, signal_x, signal_y, sample_freq):
 
     dt = 1 / sample_freq
@@ -167,7 +201,7 @@ def propagate_manakov(channel, signal_x, signal_y, sample_freq):
     return signal_x, signal_y
 
 
-def dispersion_compensation(channel, signal_x, signal_y, dt):
+def dispersion_compensation_manakov(channel, signal_x, signal_y, dt):
     """
     Compensate dispersion.
 
@@ -188,8 +222,7 @@ def dispersion_compensation(channel, signal_x, signal_y, dt):
     #  Dispersion compensation #
     nt_cdc = len(signal_x)
     t_span = nt_cdc * dt
-    w = tf.signal.fftshift(
-        np.array([(i - nt_cdc / 2) * (2. * np.pi / t_span) for i in range(nt_cdc)], dtype=np.complex))
+    w = fftshift(np.array([(i - nt_cdc / 2) * (2. * np.pi / t_span) for i in range(nt_cdc)], dtype=np.complex))
     w2 = tf.math.pow(w, 2)
     w3 = tf.math.pow(w, 3)
     dispersion = tf.math.exp((0.5j * channel['beta2'] * w2 + 1. / 6. * channel['beta3'] * w3) *
@@ -246,11 +279,12 @@ def get_default_channel_parameters():
     channel['dz'] = 1.0  # length of the step for SSFM [km]
     channel['nz'] = int(channel['z_span'] / channel['dz'])  # number of steps per each span
     channel['noise_density'] = channel['h_planck'] * channel['fc'] * (channel['gain'] - 1) * channel['noise_figure']
+    channel['seed'] = 'fixed'
 
     return channel
 
 
-def create_channel_parameters(n_spans, z_span, alpha_db, gamma, noise_figure_db, dispersion_parameter, dz):
+def create_channel_parameters(n_spans, z_span, alpha_db, gamma, noise_figure_db, dispersion_parameter, dz, seed='fixed'):
 
     alpha = alpha_db / (10 * np.log10(np.exp(1)))
     noise_figure = 10 ** (noise_figure_db / 10)
@@ -280,5 +314,6 @@ def create_channel_parameters(n_spans, z_span, alpha_db, gamma, noise_figure_db,
     channel['dz'] = dz  # length of the step for SSFM [km]
     channel['nz'] = nz  # number of steps per each span
     channel['noise_density'] = noise_density
+    channel['seed'] = seed
 
     return channel

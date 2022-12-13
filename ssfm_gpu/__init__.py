@@ -1,9 +1,9 @@
-from . import ssfm_gpu
+from . import propagation
 from . import examples
 from . import conversion
 
 __all__ = [
-    'ssfm_gpu',
+    'propagation',
     'examples',
     'conversion'
 ]

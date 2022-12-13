@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 # import ssfm_gpu
 import tensorflow as tf
-from ssfm_gpu import tf_fiber_propogate
+from .propagation import tf_fiber_propogate
 from scipy.fft import fft, ifft, fftfreq, fftshift
 import functools
 from datetime import datetime

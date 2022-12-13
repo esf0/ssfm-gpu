@@ -3,8 +3,8 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "ssfm_gpu"
-version = "0.0.2"
+name = "ssfm-gpu"
+version = "0.0.4"
 authors = [
   { name="Egor Sedov", email="e.sedov@g.nsu.ru" },
 ]
@@ -16,6 +16,8 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
+    "Development Status :: 2 - Pre-Alpha",
+    "Topic :: Scientific/Engineering",
 ]
 
 [project.urls]

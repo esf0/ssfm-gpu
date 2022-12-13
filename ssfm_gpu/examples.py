@@ -46,7 +46,7 @@ def check_energy(signal, t_span, spectrum):
 
 
 @execution_time
-def example_gauss_pulse(nt=2 ** 12, t_span=32., z_prop=1.0, beta2=-1.0, gamma=1.0):
+def example_gauss_pulse(nt=2 ** 12, t_span=32., nz=2 ** 10, z_prop=1.0, beta2=-1.0, gamma=1.0):
 
     # nt = 2 ** 12
     # t_span = 32.
@@ -64,7 +64,7 @@ def example_gauss_pulse(nt=2 ** 12, t_span=32., z_prop=1.0, beta2=-1.0, gamma=1.
 
     # z_prop = 1.0
     # signal_prop = fiber_propogate_high_order(signal, t_span, z_prop, 2 ** 8, 0, 1.0)
-    signal_prop = tf_fiber_propogate(tf.cast(signal, tf.complex128), t_span, z_prop, 2 ** 10, gamma=gamma, beta2=beta2, alpha=0, beta3=0)
+    signal_prop = tf_fiber_propogate(tf.cast(signal, tf.complex128), t_span, z_prop, nz, gamma=gamma, beta2=beta2, alpha=0, beta3=0)
     signal_prop = signal_prop.numpy()
     signal_end = get_gauss_pulse(10.0, t, 1.0, z=z_prop, beta2=beta2)
     # signal_end = get_pulse_nonlinear(signal, gamma, z_prop)

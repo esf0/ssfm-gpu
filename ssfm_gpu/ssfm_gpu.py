@@ -228,8 +228,8 @@ def dispersion_compensation_manakov(channel, signal_x, signal_y, dt):
     dispersion = tf.math.exp((0.5j * channel['beta2'] * w2 + 1. / 6. * channel['beta3'] * w3) *
                              (-channel['z_span'] * channel['n_spans']))
     signal_cdc_x, signal_cdc_y = tf_ssfm_manakov_dispersive_step(tf.cast(signal_x, tf.complex128),
-                                                               tf.cast(signal_y, tf.complex128),
-                                                               dispersion)
+                                                                 tf.cast(signal_y, tf.complex128),
+                                                                 dispersion)
 
     return signal_cdc_x, signal_cdc_y
 

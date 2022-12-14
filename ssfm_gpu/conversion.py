@@ -77,7 +77,7 @@ def convert_inverse(q, t, z, beta2, gamma, t0, type='nlse'):
     result = {}
     if type == 'nlse':
         coefficients = get_convert_coefficients_nlse(beta2, gamma, t0)
-        result['q'] = coefficients['C'] * q
+        result['q'] = q / coefficients['C']
     else:
         # manakov
         coefficients = get_convert_coefficients_manakov(beta2, gamma, t0)

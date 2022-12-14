@@ -24,14 +24,14 @@ import numpy as np
 # Z = L * z
 # L = 2 * T_0 ^ 2 / |beta2|
 # Q = C * q
-# 2 / (8/9 * gamma * L) ^ (1/2) = |2 * beta2| ^ (1/2) / [(8/9 * gamma * L) ^ (1/2) * T_0]
+# [2 / (8/9 * gamma * L)] ^ (1/2) = |beta2| ^ (1/2) / [(8/9 * gamma * L) ^ (1/2) * T_0]
 
 # to run dimensionless form of NLSE solver
 # beta2 = -+ 1
 # gamma = 1
 
 # to run dimensionless form of Manakov solver
-# beta2 = -1
+# beta2 = -2
 # gamma = +- 2 * 9/8 -> "+" focus / "-" defocus
 
 
@@ -49,7 +49,7 @@ def get_convert_coefficients_manakov(beta2, gamma, t0):
     coefficients = {}
     coefficients['T0'] = t0
     coefficients['L'] = 2 * t0 * t0 / abs(beta2)
-    coefficients['C'] = 2.0 / (8. / 9. * gamma * coefficients['L']) ** 0.5
+    coefficients['C'] = (2.0 / (8. / 9. * gamma * coefficients['L'])) ** 0.5
 
     return coefficients
 

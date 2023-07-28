@@ -26,7 +26,7 @@ def tf_fiber_propogate(initial_signal, t_span, fiber_length, n_span, gamma, beta
     dz = fiber_length / n_span
 
     n = len(initial_signal)
-    w = fftshift(np.array([(i - n / 2) * (2. * np.pi / t_span) for i in range(n)], dtype=np.complex))
+    w = fftshift(np.array([(i - n / 2) * (2. * np.pi / t_span) for i in range(n)], dtype=complex))
     w2 = tf.math.pow(w, 2)
     w3 = tf.math.pow(w, 3)
 
@@ -101,7 +101,7 @@ def dispersion_compensation(channel, signal, dt):
     #  Dispersion compensation #
     nt_cdc = len(signal)
     t_span = nt_cdc * dt
-    w = fftshift(np.array([(i - nt_cdc / 2) * (2. * np.pi / t_span) for i in range(nt_cdc)], dtype=np.complex))
+    w = fftshift(np.array([(i - nt_cdc / 2) * (2. * np.pi / t_span) for i in range(nt_cdc)], dtype=complex))
     w2 = tf.math.pow(w, 2)
     w3 = tf.math.pow(w, 3)
     dispersion = tf.math.exp((0.5j * channel['beta2'] * w2 + 1. / 6. * channel['beta3'] * w3) *
@@ -142,7 +142,7 @@ def tf_manakov_fiber_propogate(initial_first, initial_second, t_span, fiber_leng
         return initial_first, initial_second
 
     n = len(initial_first)
-    w = tf.signal.fftshift(np.array([(i - n / 2) * (2. * np.pi / t_span) for i in range(n)], dtype=np.complex))
+    w = tf.signal.fftshift(np.array([(i - n / 2) * (2. * np.pi / t_span) for i in range(n)], dtype=complex))
     w2 = tf.math.pow(w, 2)
     w3 = tf.math.pow(w, 3)
 
@@ -201,6 +201,48 @@ def propagate_manakov(channel, signal_x, signal_y, sample_freq):
     return signal_x, signal_y
 
 
+def propagate_manakov_backward(channel, signal_x, signal_y, sample_freq):
+
+    dt = 1 / sample_freq
+    nt = len(signal_x)
+    # print(nt)
+    t_span = dt * nt
+    # start_time = datetime.now()
+
+    sq_gain = tf.cast(tf.math.sqrt(channel['gain']), tf.complex128)
+    std = tf.cast(tf.math.sqrt(channel['noise_density'] * sample_freq), tf.complex128)
+    one_over_sq_2 = tf.cast(1. / tf.math.sqrt(2.), tf.complex128)
+
+    for span_ind in range(channel['n_spans']):
+        noise_x = tf.complex(tf.random.normal([nt], 0, 1, dtype=tf.float64),
+                             tf.random.normal([nt], 0, 1, dtype=tf.float64)) * one_over_sq_2
+        noise_y = tf.complex(tf.random.normal([nt], 0, 1, dtype=tf.float64),
+                             tf.random.normal([nt], 0, 1, dtype=tf.float64)) * one_over_sq_2
+
+        signal_x = (signal_x + noise_x * std) / sq_gain
+        signal_y = (signal_y + noise_y * std) / sq_gain
+
+        signal_x, signal_y = tf_manakov_fiber_propogate(signal_x, signal_y, t_span,
+                                                        channel['z_span'],
+                                                        channel['nz'],
+                                                        channel['gamma'],
+                                                        channel['beta2'],
+                                                        alpha=channel['alpha'],
+                                                        beta3=channel['beta3'])
+        #
+        # noise_x = (np.random.normal(0, 1, size=nt) + 1.0j * np.random.normal(0, 1, size=nt)) * one_over_sq_2
+        # noise_y = (np.random.normal(0, 1, size=nt) + 1.0j * np.random.normal(0, 1, size=nt)) * one_over_sq_2
+
+
+
+    # end_time = datetime.now()
+    # time_diff = (end_time - start_time)
+    # execution_time = time_diff.total_seconds() * 1000
+    # print("Signal propagation took", execution_time, "ms")
+
+    return signal_x, signal_y
+
+
 def dispersion_compensation_manakov(channel, signal_x, signal_y, dt):
     """
     Compensate dispersion.
@@ -222,7 +264,7 @@ def dispersion_compensation_manakov(channel, signal_x, signal_y, dt):
     #  Dispersion compensation #
     nt_cdc = len(signal_x)
     t_span = nt_cdc * dt
-    w = fftshift(np.array([(i - nt_cdc / 2) * (2. * np.pi / t_span) for i in range(nt_cdc)], dtype=np.complex))
+    w = fftshift(np.array([(i - nt_cdc / 2) * (2. * np.pi / t_span) for i in range(nt_cdc)], dtype=complex))
     w2 = tf.math.pow(w, 2)
     w3 = tf.math.pow(w, 3)
     dispersion = tf.math.exp((0.5j * channel['beta2'] * w2 + 1. / 6. * channel['beta3'] * w3) *

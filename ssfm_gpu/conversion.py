@@ -1,8 +1,12 @@
 import numpy as np
 
-# convert NLSE equation
-# dimensionless form iq_z +- 1/2 q_tt + |q|^2 * q = 0
-# dimension form iQ_Z - beta2 / 2 Q_TT + gamma |Q|^2 * Q = 0
+# convert
+# NLSE equation
+# dimensionless form
+# iq_z +- 1/2 q_tt + |q|^2 * q = 0
+
+# dimension form
+# iQ_Z - beta2 / 2 Q_TT + gamma |Q|^2 * Q = 0
 #
 # T = T_0 * t
 # Z = L * z
@@ -24,7 +28,7 @@ import numpy as np
 # Z = L * z
 # L = 2 * T_0 ^ 2 / |beta2|
 # Q = C * q
-# [2 / (8/9 * gamma * L)] ^ (1/2) = |beta2| ^ (1/2) / [(8/9 * gamma * L) ^ (1/2) * T_0]
+# C = [2 / (8/9 * gamma * L)] ^ (1/2) = |beta2| ^ (1/2) / [(8/9 * gamma * L) ^ (1/2) * T_0]
 
 # to run dimensionless form of NLSE solver
 # beta2 = -+ 1
@@ -33,6 +37,18 @@ import numpy as np
 # to run dimensionless form of Manakov solver
 # beta2 = -2
 # gamma = +- 2 * 9/8 -> "+" focus / "-" defocus
+
+# Additional for Manakov equation
+# dimensionless form
+# i q1_z +- 1/2 q1_tt + (|q1|^2 + |q2|^2) q1 = 0
+# i q2_z +- 1/2 q2_tt + (|q1|^2 + |q2|^2) q2 = 0
+# -1/+1 -> defocus / focus
+#
+# T = T_0 * t
+# Z = L * z
+# L = T_0 ^ 2 / |beta2|
+# Q = C * q
+# C = [1 / (8/9 * gamma * L)] ^ (1/2) = |beta2| ^ (1/2) / [(8/9 * gamma * L) ^ (1/2) * T_0]
 
 
 def get_convert_coefficients_nlse(beta2, gamma, t0):
@@ -45,16 +61,19 @@ def get_convert_coefficients_nlse(beta2, gamma, t0):
     return coefficients
 
 
-def get_convert_coefficients_manakov(beta2, gamma, t0):
+def get_convert_coefficients_manakov(beta2, gamma, t0, manakov_type=0):
     coefficients = {}
     coefficients['T0'] = t0
-    coefficients['L'] = 2 * t0 * t0 / abs(beta2)
-    coefficients['C'] = (2.0 / (8. / 9. * gamma * coefficients['L'])) ** 0.5
+    if manakov_type == 0:
+        coefficients['L'] = 2 * t0 * t0 / abs(beta2)
+    else:
+        coefficients['L'] = t0 * t0 / abs(beta2)
+    coefficients['C'] = (abs(beta2) / (8. / 9. * gamma)) ** 0.5 / t0
 
     return coefficients
 
 
-def convert_forward(q, t, z, beta2, gamma, t0, type='nlse'):
+def convert_forward(q, t, z, beta2, gamma, t0, type='nlse', manakov_type=0):
     # convert from dimensionless to dimension form
     result = {}
     if type == 'nlse':
@@ -62,7 +81,7 @@ def convert_forward(q, t, z, beta2, gamma, t0, type='nlse'):
         result['Q'] = coefficients['C'] * q
     else:
         # manakov
-        coefficients = get_convert_coefficients_manakov(beta2, gamma, t0)
+        coefficients = get_convert_coefficients_manakov(beta2, gamma, t0, manakov_type)
         result['Q1'] = coefficients['C'] * q[0]
         result['Q2'] = coefficients['C'] * q[1]
 
@@ -72,7 +91,7 @@ def convert_forward(q, t, z, beta2, gamma, t0, type='nlse'):
     return result
 
 
-def convert_inverse(q, t, z, beta2, gamma, t0, type='nlse'):
+def convert_inverse(q, t, z, beta2, gamma, t0, type='nlse', manakov_type=0):
     # convert from dimension to dimensionless form
     result = {}
     if type == 'nlse':
@@ -80,7 +99,7 @@ def convert_inverse(q, t, z, beta2, gamma, t0, type='nlse'):
         result['q'] = q / coefficients['C']
     else:
         # manakov
-        coefficients = get_convert_coefficients_manakov(beta2, gamma, t0)
+        coefficients = get_convert_coefficients_manakov(beta2, gamma, t0, manakov_type)
         result['q1'] = q[0] / coefficients['C']
         result['q2'] = q[1] / coefficients['C']
 

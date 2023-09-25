@@ -82,6 +82,42 @@ def propagate_schrodinger(channel, signal, sample_freq):
     return signal
 
 
+def propagate_schrodinger_backward(channel, signal, sample_freq):
+    # schrodinger
+    dt = 1 / sample_freq
+    nt = len(signal)
+    # print(nt)
+    t_span = dt * nt
+    # start_time = datetime.now()
+
+    sq_gain = tf.cast(tf.math.sqrt(channel['gain']), tf.complex128)
+    std = tf.cast(tf.math.sqrt(channel['noise_density'] * sample_freq), tf.complex128)
+    # one_over_sq_2 = tf.cast(1. / tf.math.sqrt(2.), tf.complex128)
+
+    for span_ind in range(channel['n_spans']):
+
+        noise = tf.complex(tf.random.normal([nt], 0, 1, dtype=tf.float64),
+                           tf.random.normal([nt], 0, 1, dtype=tf.float64))
+
+        signal = (signal + noise * std) / sq_gain
+
+        signal = tf_fiber_propogate(signal, t_span,
+                                    channel['z_span'],
+                                    channel['nz'],
+                                    channel['gamma'],
+                                    channel['beta2'],
+                                    alpha=channel['alpha'],
+                                    beta3=channel['beta3'])
+
+
+    # end_time = datetime.now()
+    # time_diff = (end_time - start_time)
+    # execution_time = time_diff.total_seconds() * 1000
+    # print("Signal propagation took", execution_time, "ms")
+
+    return signal
+
+
 def dispersion_compensation(channel, signal, dt):
     """
     Compensate dispersion.
@@ -187,8 +223,10 @@ def propagate_manakov(channel, signal_x, signal_y, sample_freq):
         # noise_x = (np.random.normal(0, 1, size=nt) + 1.0j * np.random.normal(0, 1, size=nt)) * one_over_sq_2
         # noise_y = (np.random.normal(0, 1, size=nt) + 1.0j * np.random.normal(0, 1, size=nt)) * one_over_sq_2
 
-        noise_x = tf.complex(tf.random.normal([nt], 0, 1, dtype=tf.float64), tf.random.normal([nt], 0, 1, dtype=tf.float64)) * one_over_sq_2
-        noise_y = tf.complex(tf.random.normal([nt], 0, 1, dtype=tf.float64), tf.random.normal([nt], 0, 1, dtype=tf.float64)) * one_over_sq_2
+        noise_x = tf.complex(tf.random.normal([nt], 0, 1, dtype=tf.float64),
+                             tf.random.normal([nt], 0, 1, dtype=tf.float64)) * one_over_sq_2
+        noise_y = tf.complex(tf.random.normal([nt], 0, 1, dtype=tf.float64),
+                             tf.random.normal([nt], 0, 1, dtype=tf.float64)) * one_over_sq_2
 
         signal_x = sq_gain * signal_x + noise_x * std
         signal_y = sq_gain * signal_y + noise_y * std

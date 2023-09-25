@@ -55,11 +55,13 @@ def propagate_schrodinger(channel, signal, sample_freq):
     t_span = dt * nt
     # start_time = datetime.now()
 
-    sq_gain = tf.cast(tf.math.sqrt(channel['gain']), tf.complex128)
-    std = tf.cast(tf.math.sqrt(channel['noise_density'] * sample_freq), tf.complex128)
-    std = tf.where(tf.math.is_nan(std), tf.complex128(tf.constant(0.0)),
-                   std)  # Replace NaN with 0 (or another appropriate value)
+    if channel['noise_density'] < 1e-20:
+        noise_density = 0.0
+    else:
+        noise_density = channel['noise_density']
 
+    sq_gain = tf.cast(tf.math.sqrt(channel['gain']), tf.complex128)
+    std = tf.cast(tf.math.sqrt(noise_density * sample_freq), tf.complex128)
     # one_over_sq_2 = tf.cast(1. / tf.math.sqrt(2.), tf.complex128)
 
     for span_ind in range(channel['n_spans']):
@@ -93,10 +95,13 @@ def propagate_schrodinger_backward(channel, signal, sample_freq):
     t_span = dt * nt
     # start_time = datetime.now()
 
+    if channel['noise_density'] < 1e-20:
+        noise_density = 0.0
+    else:
+        noise_density = channel['noise_density']
+
     sq_gain = tf.cast(tf.math.sqrt(channel['gain']), tf.complex128)
-    std = tf.cast(tf.math.sqrt(channel['noise_density'] * sample_freq), tf.complex128)
-    std = tf.where(tf.math.is_nan(std), tf.complex128(tf.constant(0.0)),
-                   std)  # Replace NaN with 0 (or another appropriate value)
+    std = tf.cast(tf.math.sqrt(noise_density * sample_freq), tf.complex128)
 
     # one_over_sq_2 = tf.cast(1. / tf.math.sqrt(2.), tf.complex128)
 
@@ -213,10 +218,13 @@ def propagate_manakov(channel, signal_x, signal_y, sample_freq):
     t_span = dt * nt
     # start_time = datetime.now()
 
+    if channel['noise_density'] < 1e-20:
+        noise_density = 0.0
+    else:
+        noise_density = channel['noise_density']
+
     sq_gain = tf.cast(tf.math.sqrt(channel['gain']), tf.complex128)
-    std = tf.cast(tf.math.sqrt(channel['noise_density'] * sample_freq), tf.complex128)
-    std = tf.where(tf.math.is_nan(std), tf.complex128(tf.constant(0.0)),
-                   std)  # Replace NaN with 0 (or another appropriate value)
+    std = tf.cast(tf.math.sqrt(noise_density * sample_freq), tf.complex128)
 
     one_over_sq_2 = tf.cast(1. / tf.math.sqrt(2.), tf.complex128)
 
@@ -256,10 +264,13 @@ def propagate_manakov_backward(channel, signal_x, signal_y, sample_freq):
     t_span = dt * nt
     # start_time = datetime.now()
 
+    if channel['noise_density'] < 1e-20:
+        noise_density = 0.0
+    else:
+        noise_density = channel['noise_density']
+
     sq_gain = tf.cast(tf.math.sqrt(channel['gain']), tf.complex128)
-    std = tf.cast(tf.math.sqrt(channel['noise_density'] * sample_freq), tf.complex128)
-    std = tf.where(tf.math.is_nan(std), tf.complex128(tf.constant(0.0)),
-                   std)  # Replace NaN with 0 (or another appropriate value)
+    std = tf.cast(tf.math.sqrt(noise_density * sample_freq), tf.complex128)
 
     one_over_sq_2 = tf.cast(1. / tf.math.sqrt(2.), tf.complex128)
 

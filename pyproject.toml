@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ssfm-gpu"
-version = "0.1.2"
+version = "0.1.3"
 authors = [
   { name="Egor Sedov", email="e.sedov@g.nsu.ru" },
 ]
